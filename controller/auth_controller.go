@@ -53,6 +53,45 @@ func Login(db *sql.DB) fiber.Handler {
 	}
 }
 
+func Register(db *sql.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var err error
+
+		type Req struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+
+		var req Req
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		res, err := db.Exec(
+			`INSERT INTO users (username, password, createdat) VALUES (?,?,NOW())`,
+			req.Username,
+			req.Password,
+		)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+			})
+		}
+
+		id, err := res.LastInsertId()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"id":       id,
+			"username": req.Username,
+		})
+	}
+}
+
 func RefreshToken(c *fiber.Ctx) error {
 	refreshCookie := c.Cookies("refresh_token")
 	if refreshCookie == "" {

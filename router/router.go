@@ -39,6 +39,7 @@ func setupPublicRoutes(app *fiber.App, db *sql.DB) {
 	api := app.Group("/api")
 
 	api.Post("/login", controller.Login(db))
+	api.Post("/register", controller.Register(db))
 	api.Post("/refresh_token", controller.RefreshToken)
 	api.Post("/logout", controller.Logout)
 }

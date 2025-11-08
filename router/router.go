@@ -15,6 +15,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	app.Use(jwtware.New(jwtware.Config{
 		SigningKey:  jwtware.SigningKey{Key: []byte("secret")},
 		TokenLookup: "cookie:token", // 👈 look in cookie named "token"
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if err != nil {
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"error": "access forbidden, invalid or expired token",
+				})
+			}
+			return nil
+		},
 	}))
 
 	setupAuthRoutes(app)
@@ -31,5 +39,6 @@ func setupPublicRoutes(app *fiber.App, db *sql.DB) {
 	api := app.Group("/api")
 
 	api.Post("/login", controller.Login(db))
+	api.Post("/refresh_token", controller.RefreshToken)
 	api.Post("/logout", controller.Logout)
 }

@@ -2,9 +2,12 @@ package controller
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 
+	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -24,7 +27,7 @@ func Login(db *sql.DB) fiber.Handler {
 
 		var userID int
 		err = db.QueryRow(
-			`SELECT id FROM users WHERE name=? AND password=?`,
+			`SELECT id FROM users WHERE username=? AND password=?`,
 			req.Username,
 			req.Password,
 		).Scan(&userID)
@@ -32,30 +35,62 @@ func Login(db *sql.DB) fiber.Handler {
 			return c.Status(401).JSON(fiber.Map{"error": "invalid credentials"})
 		}
 
-		// Create the Claims
-		claims := jwt.MapClaims{
-			"name": req.Username,
-			"id":   userID,
-			"exp":  time.Now().Add(time.Hour * 72).Unix(),
-		}
-
-		// Create token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		// Generate encoded token and send it as response.
-		t, err := token.SignedString([]byte("secret"))
+		// token
+		token, err := utils.GenerateJWT(req.Username, strconv.Itoa(userID), 15*time.Minute)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		c.Cookie(&fiber.Cookie{Name: "token", Value: t})
-		return c.JSON(fiber.Map{"token": t})
+		// refresh_token
+		c.Cookie(&fiber.Cookie{Name: "token", Value: token})
+		refresh_token, err := utils.GenerateJWT(req.Username, strconv.Itoa(userID), 7*24*time.Hour)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		c.Cookie(&fiber.Cookie{Name: "refresh_token", Value: refresh_token})
+
+		return c.JSON(fiber.Map{"token": token})
 	}
+}
+
+func RefreshToken(c *fiber.Ctx) error {
+	refreshCookie := c.Cookies("refresh_token")
+	if refreshCookie == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "no refresh token"})
+	}
+
+	token, err := jwt.Parse(refreshCookie, func(t *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	if err != nil || !token.Valid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid refresh token"})
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	username := claims["username"].(string)
+	userId := claims["id"].(string)
+
+	newAccessToken, err := utils.GenerateJWT(username, userId, 15*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	c.Cookie(&fiber.Cookie{Name: "token", Value: newAccessToken})
+
+	return c.JSON(fiber.Map{"message": "token refreshed"})
 }
 
 func Logout(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour), // set expiry in the past
+		HTTPOnly: true,
+		Secure:   true, // set to true if using HTTPS
+		SameSite: "Lax",
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
 		Value:    "",
 		Expires:  time.Now().Add(-time.Hour), // set expiry in the past
 		HTTPOnly: true,

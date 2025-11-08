@@ -1,13 +1,15 @@
 package router
 
 import (
+	"database/sql"
+
 	"github.com/farid141/go-rest-api/controller"
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupRoutes(app *fiber.App) {
-	setupPublicRoutes(app)
+func SetupRoutes(app *fiber.App, db *sql.DB) {
+	setupPublicRoutes(app, db)
 
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
@@ -25,9 +27,9 @@ func setupAuthRoutes(app *fiber.App) {
 	api.Post("/users", controller.CreateUser)
 }
 
-func setupPublicRoutes(app *fiber.App) {
+func setupPublicRoutes(app *fiber.App, db *sql.DB) {
 	api := app.Group("/api")
 
-	api.Post("/login", controller.Login)
+	api.Post("/login", controller.Login(db))
 	api.Post("/logout", controller.Logout)
 }

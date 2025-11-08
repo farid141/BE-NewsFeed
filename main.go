@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -27,7 +28,22 @@ func main() {
 		cfg.DBPort,
 		cfg.DBName,
 	)
-	fmt.Println("DB URL: " + dsn)
+	fmt.Println("DB URL: " + dsn) // for executing migrate command
+
+	// create db connection
+	db_dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s",
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
+	)
+	db, err := sql.Open("mysql", db_dsn)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
 	app := fiber.New(fiber.Config{
 		// Prefork:       true,
@@ -40,12 +56,7 @@ func main() {
 	file, _ := os.OpenFile("application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	log.SetOutput(file)
 
-	router.SetupRoutes(app)
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		log.Info("hay")
-		return c.SendString("Hello, World!")
-	})
+	router.SetupRoutes(app, db)
 
 	app.Listen(":3000")
 }

@@ -25,14 +25,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		},
 	}))
 
-	setupAuthRoutes(app)
+	setupAuthRoutes(app, db)
 }
 
-func setupAuthRoutes(app *fiber.App) {
+func setupAuthRoutes(app *fiber.App, db *sql.DB) {
 	api := app.Group("/api")
 
 	api.Get("/users", controller.GetUsers)
-	api.Post("/users", controller.CreateUser)
+	api.Post("/posts", controller.CreatePost(db))
 }
 
 func setupPublicRoutes(app *fiber.App, db *sql.DB) {

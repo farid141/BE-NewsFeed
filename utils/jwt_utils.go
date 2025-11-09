@@ -3,6 +3,7 @@ package utils
 import (
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -17,4 +18,9 @@ func GenerateJWT(username string, userID string, duration time.Duration) (string
 	// Create token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte("secret"))
+}
+
+func GetJWTClaims(c *fiber.Ctx) jwt.MapClaims {
+	user := c.Locals("user").(*jwt.Token)
+	return user.Claims.(jwt.MapClaims)
 }

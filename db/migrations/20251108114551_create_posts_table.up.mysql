@@ -1,0 +1,6 @@
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  userid INT NOT NULL REFERENCES users(id),
+  content VARCHAR(200) NOT NULL,
+  createdat TIMESTAMP NOT NULL DEFAULT NOW()
+);

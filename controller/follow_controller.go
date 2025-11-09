@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 
+	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,6 +12,20 @@ func FollowUser(db *sql.DB, follow bool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var err error
 		followedID := c.Params("id")
+		// followedID validation
+		exists, err := helper.CoulmnValueExists(db, "users", "id", followedID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+			})
+		}
+		if !exists {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "ID not found",
+			})
+		}
+
+		// insert new user
 
 		claims := utils.GetJWTClaims(c)
 		userID := claims["id"]

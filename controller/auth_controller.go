@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/farid141/go-rest-api/dto"
+	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
 
@@ -63,6 +64,20 @@ func Register(db *sql.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 		}
 
+		// username validation
+		exists, err := helper.CoulmnValueExists(db, "users", "username", req.Username)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+			})
+		}
+		if exists {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"message": "Username already exists",
+			})
+		}
+
+		// insert new user
 		res, err := db.Exec(
 			`INSERT INTO users (username, password, createdat) VALUES (?,?,NOW())`,
 			req.Username,

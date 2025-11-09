@@ -2,10 +2,12 @@ package controller
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/model"
+	"github.com/farid141/go-rest-api/response"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -68,5 +70,75 @@ func CreatePost(db *sql.DB) fiber.Handler {
 			Content:   createdPost.Content,
 			CreatedAt: createdPost.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
+	}
+}
+
+func GetFeed(db *sql.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		claims := utils.GetJWTClaims(c)
+		userID := claims["id"]
+
+		page, _ := strconv.Atoi(c.Query("page"))
+		limit, _ := strconv.Atoi(c.Query("limit"))
+		if limit == 0 {
+			limit = 10
+		}
+		if page == 0 {
+			page = 1
+		}
+		offset := (page - 1) * limit
+
+		// ambil total dulu untuk pagination
+		var total int
+		err := db.QueryRow(`
+            SELECT COUNT(*)
+            FROM posts p
+            JOIN follows f ON f.followed_id = p.userid
+            WHERE f.follower_id = ?
+        `, userID).Scan(&total)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		rows, err := db.Query(`
+            SELECT p.id, p.userid, p.content, p.createdat
+            FROM posts p
+            JOIN follows f ON f.followed_id = p.userid
+            WHERE f.follower_id = ?
+            ORDER BY p.createdat DESC
+            LIMIT ? OFFSET ?
+        `, userID, limit, offset)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		defer rows.Close()
+
+		var posts []model.Post
+		for rows.Next() {
+			var p model.Post
+			var createdAtStr string
+
+			if err := rows.Scan(&p.ID, &p.UserID, &p.Content, &createdAtStr); err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+			}
+			p.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+			}
+
+			posts = append(posts, p)
+		}
+
+		resp := response.PaginatedResponse[model.Post]{
+			Data: posts,
+			Pagination: response.Pagination{
+				Page:    page,
+				Limit:   limit,
+				Total:   total,
+				HasMore: page*limit < total,
+			},
+		}
+
+		return c.JSON(resp)
 	}
 }

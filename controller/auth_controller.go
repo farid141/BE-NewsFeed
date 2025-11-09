@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
 
@@ -57,12 +58,7 @@ func Register(db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var err error
 
-		type Req struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}
-
-		var req Req
+		var req dto.CreateUserRequest
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 		}
@@ -85,9 +81,9 @@ func Register(db *sql.DB) fiber.Handler {
 			})
 		}
 
-		return c.JSON(fiber.Map{
-			"id":       id,
-			"username": req.Username,
+		return c.JSON(dto.UserResponse{
+			ID:       id,
+			Username: req.Username,
 		})
 	}
 }

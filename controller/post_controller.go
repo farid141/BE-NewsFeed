@@ -7,16 +7,25 @@ import (
 	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/model"
 	"github.com/farid141/go-rest-api/utils"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 func CreatePost(db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		var validate = validator.New()
 		var err error
 
 		var req dto.CreatePostRequest
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		// Validate struct
+		if err := validate.Struct(req); err != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+				"error": err.Error(),
+			})
 		}
 
 		claims := utils.GetJWTClaims(c)
@@ -53,7 +62,7 @@ func CreatePost(db *sql.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 
-		return c.JSON(dto.PostResponse{
+		return c.Status(fiber.StatusCreated).JSON(dto.PostResponse{
 			ID:        lastID,
 			UserID:    createdPost.UserID,
 			Content:   createdPost.Content,

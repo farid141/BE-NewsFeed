@@ -96,7 +96,7 @@ func Register(db *sql.DB) fiber.Handler {
 			})
 		}
 
-		return c.JSON(dto.UserResponse{
+		return c.Status(fiber.StatusCreated).JSON(dto.UserResponse{
 			ID:       id,
 			Username: req.Username,
 		})

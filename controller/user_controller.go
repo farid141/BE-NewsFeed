@@ -5,13 +5,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/farid141/go-rest-api/model"
+	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/response"
+	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetUsers(db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		claims := utils.GetJWTClaims(c)
+		userID := claims["id"]
+
 		page, _ := strconv.Atoi(c.Query("page"))
 		limit, _ := strconv.Atoi(c.Query("limit"))
 		if limit == 0 {
@@ -33,22 +37,28 @@ func GetUsers(db *sql.DB) fiber.Handler {
 		}
 
 		rows, err := db.Query(`
-            SELECT id, username, password, createdat
-			FROM users
-            ORDER BY createdat DESC
+            SELECT 
+				u.id,
+				u.username,
+				CASE WHEN f.follower_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_following,
+				u.createdat
+			FROM users u
+			LEFT JOIN follows f ON f.followed_id = u.id AND f.follower_id = ?
+			WHERE u.id != ?
+			ORDER BY u.createdat DESC
             LIMIT ? OFFSET ?
-        `, limit, offset)
+        `, userID, userID, limit, offset)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 		defer rows.Close()
 
-		var users []model.User
+		var users []dto.UserResponse
 		for rows.Next() {
-			var u model.User
+			var u dto.UserResponse
 			var createdAtStr string
 
-			if err := rows.Scan(&u.ID, &u.Username, &u.Password, &createdAtStr); err != nil {
+			if err := rows.Scan(&u.ID, &u.Username, &u.Following, &createdAtStr); err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 			}
 
@@ -59,7 +69,7 @@ func GetUsers(db *sql.DB) fiber.Handler {
 			users = append(users, u)
 		}
 
-		resp := response.PaginatedResponse[model.User]{
+		resp := response.PaginatedResponse[dto.UserResponse]{
 			Data: users,
 			Pagination: response.Pagination{
 				Page:    page,

@@ -34,7 +34,7 @@ func CreatePost(db *sql.DB) fiber.Handler {
 		userID := claims["id"]
 
 		res, err := db.Exec(
-			`INSERT INTO posts (userid, content, createdat) VALUES (?,?,NOW())`,
+			`INSERT INTO posts (user_id, content, created_at) VALUES (?,?,NOW())`,
 			userID,
 			req.Content,
 		)
@@ -53,7 +53,7 @@ func CreatePost(db *sql.DB) fiber.Handler {
 
 		var createdAtStr string
 		var createdPost model.Post
-		err = db.QueryRow("SELECT id, userid, content, createdat FROM posts WHERE id = ?", lastID).
+		err = db.QueryRow("SELECT id, user_id, content, created_at FROM posts WHERE id = ?", lastID).
 			Scan(&createdPost.ID, &createdPost.UserID, &createdPost.Content, &createdAtStr)
 		if err != nil {
 			return c.Status(401).JSON(fiber.Map{"error": "invalid credentials"})
@@ -93,7 +93,7 @@ func GetFeed(db *sql.DB) fiber.Handler {
 		err := db.QueryRow(`
             SELECT COUNT(*)
             FROM posts p
-            JOIN follows f ON f.followed_id = p.userid
+            JOIN follows f ON f.followed_id = p.user_id
             WHERE f.follower_id = ?
         `, userID).Scan(&total)
 		if err != nil {
@@ -101,11 +101,11 @@ func GetFeed(db *sql.DB) fiber.Handler {
 		}
 
 		rows, err := db.Query(`
-            SELECT p.id, p.userid, p.content, p.createdat
+            SELECT p.id, p.user_id, p.content, p.created_at
             FROM posts p
-            JOIN follows f ON f.followed_id = p.userid
+            JOIN follows f ON f.followed_id = p.user_id
             WHERE f.follower_id = ?
-            ORDER BY p.createdat DESC
+            ORDER BY p.created_at DESC
             LIMIT ? OFFSET ?
         `, userID, limit, offset)
 		if err != nil {

@@ -41,11 +41,11 @@ func GetUsers(db *sql.DB) fiber.Handler {
 				u.id,
 				u.username,
 				CASE WHEN f.follower_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_following,
-				u.createdat
+				u.created_at
 			FROM users u
 			LEFT JOIN follows f ON f.followed_id = u.id AND f.follower_id = ?
 			WHERE u.id != ?
-			ORDER BY u.createdat DESC
+			ORDER BY u.created_at DESC
             LIMIT ? OFFSET ?
         `, userID, userID, limit, offset)
 		if err != nil {

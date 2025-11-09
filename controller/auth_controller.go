@@ -9,6 +9,7 @@ import (
 	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -28,13 +29,18 @@ func Login(db *sql.DB) fiber.Handler {
 		}
 
 		var userID int
+		var hashedPassword string
 		err = db.QueryRow(
-			`SELECT id FROM users WHERE username=? AND password=?`,
+			`SELECT id, password_hash FROM users WHERE username=?`,
 			req.Username,
-			req.Password,
-		).Scan(&userID)
+		).Scan(&userID, &hashedPassword)
 		if err != nil {
 			return c.Status(401).JSON(fiber.Map{"error": "invalid credentials"})
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
+		if err != nil {
+			return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
 		}
 
 		// token
@@ -77,11 +83,16 @@ func Register(db *sql.DB) fiber.Handler {
 			})
 		}
 
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
+
 		// insert new user
 		res, err := db.Exec(
-			`INSERT INTO users (username, password, createdat) VALUES (?,?,NOW())`,
+			`INSERT INTO users (username, password_hash, created_at) VALUES (?,?,NOW())`,
 			req.Username,
-			req.Password,
+			hashedPassword,
 		)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

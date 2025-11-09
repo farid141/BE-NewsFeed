@@ -33,6 +33,8 @@ func setupAuthRoutes(app *fiber.App, db *sql.DB) {
 
 	api.Get("/users", controller.GetUsers(db))
 	api.Post("/posts", controller.CreatePost(db))
+	api.Post("/follow/:id", controller.FollowUser(db, true))
+	api.Delete("/follow/:id", controller.FollowUser(db, false))
 }
 
 func setupPublicRoutes(app *fiber.App, db *sql.DB) {

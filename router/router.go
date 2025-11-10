@@ -31,6 +31,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 func setupAuthRoutes(app *fiber.App, db *sql.DB) {
 	api := app.Group("/api")
 
+	api.Get("/me", controller.Me())
 	api.Get("/users", controller.GetUsers(db))
 	api.Post("/posts", controller.CreatePost(db))
 	api.Post("/follow/:id", controller.FollowUser(db, true))

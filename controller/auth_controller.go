@@ -160,3 +160,13 @@ func Logout(c *fiber.Ctx) error {
 	})
 	return c.SendStatus(fiber.StatusOK)
 }
+
+func Me() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		claims := utils.GetJWTClaims(c)
+		username := claims["username"]
+
+		return c.JSON(fiber.Map{"name": username})
+	}
+}

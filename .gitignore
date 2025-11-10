@@ -2,5 +2,5 @@
 
 .env
 /tmp
-*.exe
+*.exe*
 .vscode/

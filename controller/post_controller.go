@@ -113,7 +113,7 @@ func GetFeed(db *sql.DB) fiber.Handler {
 		}
 		defer rows.Close()
 
-		var posts []model.Post
+		posts := make([]model.Post, 0)
 		for rows.Next() {
 			var p model.Post
 			var createdAtStr string

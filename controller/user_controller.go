@@ -53,7 +53,7 @@ func GetUsers(db *sql.DB) fiber.Handler {
 		}
 		defer rows.Close()
 
-		var users []dto.UserResponse
+		users := make([]dto.UserResponse, 0)
 		for rows.Next() {
 			var u dto.UserResponse
 			var createdAtStr string

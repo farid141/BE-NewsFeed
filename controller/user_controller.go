@@ -3,7 +3,6 @@ package controller
 import (
 	"database/sql"
 	"strconv"
-	"time"
 
 	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/response"
@@ -56,14 +55,8 @@ func GetUsers(db *sql.DB) fiber.Handler {
 		users := make([]dto.UserResponse, 0)
 		for rows.Next() {
 			var u dto.UserResponse
-			var createdAtStr string
 
-			if err := rows.Scan(&u.ID, &u.Username, &u.Following, &createdAtStr); err != nil {
-				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-			}
-
-			u.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
-			if err != nil {
+			if err := rows.Scan(&u.ID, &u.Username, &u.Following, &u.CreatedAt); err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 			}
 			users = append(users, u)

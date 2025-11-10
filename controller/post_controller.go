@@ -93,9 +93,9 @@ func GetFeed(db *sql.DB) fiber.Handler {
 		err := db.QueryRow(`
             SELECT COUNT(*)
             FROM posts p
-            JOIN follows f ON f.followed_id = p.user_id
-            WHERE f.follower_id = ?
-        `, userID).Scan(&total)
+            LEFT JOIN follows f ON f.followed_id = p.user_id
+            WHERE f.follower_id = ? OR p.user_id = ?
+        `, userID, userID).Scan(&total)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
@@ -103,33 +103,27 @@ func GetFeed(db *sql.DB) fiber.Handler {
 		rows, err := db.Query(`
             SELECT p.id, p.user_id, p.content, p.created_at
             FROM posts p
-            JOIN follows f ON f.followed_id = p.user_id
-            WHERE f.follower_id = ?
+            LEFT JOIN follows f ON f.followed_id = p.user_id
+            WHERE f.follower_id = ? OR p.user_id = ?
             ORDER BY p.created_at DESC
             LIMIT ? OFFSET ?
-        `, userID, limit, offset)
+        `, userID, userID, limit, offset)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 		defer rows.Close()
 
-		posts := make([]model.Post, 0)
+		posts := make([]dto.PostResponse, 0)
 		for rows.Next() {
-			var p model.Post
-			var createdAtStr string
-
-			if err := rows.Scan(&p.ID, &p.UserID, &p.Content, &createdAtStr); err != nil {
-				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-			}
-			p.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
-			if err != nil {
+			var p dto.PostResponse
+			if err := rows.Scan(&p.ID, &p.UserID, &p.Content, &p.CreatedAt); err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 			}
 
 			posts = append(posts, p)
 		}
 
-		resp := response.PaginatedResponse[model.Post]{
+		resp := response.PaginatedResponse[dto.PostResponse]{
 			Data: posts,
 			Pagination: response.Pagination{
 				Page:    page,

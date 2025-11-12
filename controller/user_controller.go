@@ -3,6 +3,7 @@ package controller
 import (
 	"strconv"
 
+	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,7 +32,14 @@ func (ctl *UserController) GetUsers(c *fiber.Ctx) error {
 
 	users, err := ctl.userService.ListUsers(1, page, limit, offset)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		if se, ok := err.(*helper.ServiceError); ok {
+			return c.Status(se.StatusCode).JSON(fiber.Map{
+				"error":   se.Message,
+				"details": se.Details,
+			})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": "internal server error"})
 	}
+
 	return c.JSON(users)
 }

@@ -3,8 +3,10 @@ package service
 
 import (
 	"github.com/farid141/go-rest-api/dto"
+	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/repository"
 	"github.com/farid141/go-rest-api/response"
+	"github.com/gofiber/fiber/v2"
 )
 
 type UserService interface {
@@ -22,7 +24,7 @@ func NewUserService(repo repository.UserRepository) UserService {
 func (s *userService) ListUsers(userID int, page, limit, offset int) (response.PaginatedResponse[dto.UserResponse], error) {
 	users, total, err := s.repo.GetUsers(userID, limit, offset)
 	if err != nil {
-		return response.PaginatedResponse[dto.UserResponse]{}, err
+		return response.PaginatedResponse[dto.UserResponse]{}, helper.NewServiceError(fiber.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	userDTOs := make([]dto.UserResponse, len(users))

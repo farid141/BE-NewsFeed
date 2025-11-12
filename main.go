@@ -1,12 +1,9 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"os"
 
-	"github.com/farid141/go-rest-api/config"
-	"github.com/farid141/go-rest-api/router"
+	"github.com/farid141/go-rest-api/app"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
@@ -16,35 +13,10 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dsn := fmt.Sprintf(
-		"mysql://%s:%s@tcp(%s:%d)/%s",
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-	)
-	fmt.Println("DB URL: " + dsn) // for executing migrate command
-
-	// create db connection
-	db_dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-	)
-	db, err := sql.Open("mysql", db_dsn)
+	appContainer, err := app.InitializeApp()
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
 
 	app := fiber.New(fiber.Config{
 		// Prefork:       true,
@@ -54,6 +26,8 @@ func main() {
 		AppName:       "Test App",
 	})
 
+	appContainer.Router.Setup(app)
+
 	file, _ := os.OpenFile("application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	log.SetOutput(file)
 
@@ -62,8 +36,6 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept",
 		AllowCredentials: true,
 	}))
-
-	router.SetupRoutes(app, db)
 
 	app.Listen(":3030")
 }

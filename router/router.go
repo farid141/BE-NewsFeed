@@ -8,19 +8,20 @@ import (
 
 type Router struct {
 	userController *controller.UserController
+	authController *controller.AuthController
 }
 
-func NewRouter(userController *controller.UserController) *Router {
-	return &Router{userController: userController}
+func NewRouter(userController *controller.UserController, authController *controller.AuthController) *Router {
+	return &Router{userController: userController, authController: authController}
 }
 
 func (r *Router) Setup(app *fiber.App) {
 	api := app.Group("/api")
 
-	// api.Post("/login", controller.Login(db))
-	// api.Post("/register", controller.Register(db))
-	// api.Post("/refresh_token", controller.RefreshToken)
-	// api.Post("/logout", controller.Logout)
+	api.Post("/login", r.authController.Login)
+	api.Post("/register", r.authController.Register)
+	api.Post("/refresh_token", r.authController.RefreshToken)
+	api.Post("/logout", r.authController.Logout)
 	api.Get("/users", r.userController.GetUsers)
 
 	// JWT Middleware
@@ -37,7 +38,7 @@ func (r *Router) Setup(app *fiber.App) {
 		},
 	}))
 
-	// api.Get("/me", controller.Me())
+	api.Get("/me", r.authController.Me)
 
 	// api.Post("/posts", controller.CreatePost(db))
 	// api.Post("/follow/:id", controller.FollowUser(db, true))

@@ -11,3 +11,9 @@ type UserResponse struct {
 	Following bool   `json:"following"`
 	CreatedAt string `json:"createdat"`
 }
+
+type CreateUserResponse struct {
+	ID        int64  `json:"id"`
+	Username  string `json:"username"`
+	CreatedAt string `json:"createdat"`
+}

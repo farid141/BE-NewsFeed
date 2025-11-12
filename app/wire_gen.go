@@ -28,10 +28,13 @@ func InitializeApp() (*AppContainer, error) {
 	}
 	userRepository := repository.NewUserRepository(sqlDB)
 	userService := service.NewUserService(userRepository)
+	authService := service.NewAuthService(userRepository)
 	userController := controller.NewUserController(userService)
-	routerRouter := router.NewRouter(userController)
+	authController := controller.NewAuthController(authService)
+	routerRouter := router.NewRouter(userController, authController)
 	appContainer := &AppContainer{
 		UserService: userService,
+		AuthService: authService,
 		Router:      routerRouter,
 	}
 	return appContainer, nil
@@ -41,5 +44,6 @@ func InitializeApp() (*AppContainer, error) {
 
 type AppContainer struct {
 	UserService service.UserService
+	AuthService service.AuthService
 	Router      *router.Router
 }

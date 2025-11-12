@@ -3,10 +3,18 @@ package repository
 import (
 	"database/sql"
 	"time"
+
+	"github.com/farid141/go-rest-api/dto"
+	"github.com/farid141/go-rest-api/helper"
+	"github.com/farid141/go-rest-api/model"
+	"github.com/gofiber/fiber/v2"
 )
 
 type UserRepository interface {
 	GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error)
+	CreateUser(dto.CreateUserRequest) (int, error)
+	GetUserByUsername(username string) (*model.User, error)
+	GetUserByID(id int) (*model.User, error)
 }
 
 type userRepository struct {
@@ -59,4 +67,61 @@ func (r *userRepository) GetUsers(userID int, limit, offset int) ([]UserWithProf
 	}
 
 	return users, total, nil
+}
+
+func (r *userRepository) GetUserByUsername(username string) (*model.User, error) {
+	var user model.User
+	err := r.db.QueryRow(
+		`SELECT id, username, password_hash, created_at 
+		FROM users WHERE username=?`,
+		username,
+	).Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetUserByID(id int) (*model.User, error) {
+	var user model.User
+	err := r.db.QueryRow(
+		`SELECT id, username, password_hash, created_at 
+		FROM users WHERE id=?`,
+		id,
+	).Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
+	// username validation
+	exists, err := helper.CoulmnValueExists(r.db, "users", "username", req.Username)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, helper.NewServiceError(fiber.StatusConflict, "Username already exists", nil)
+	}
+
+	// insert new user
+	res, err := r.db.Exec(
+		`INSERT INTO users (username, password_hash, created_at) VALUES (?,?,NOW())`,
+		req.Username,
+		req.Password,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	// get id of new user
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
 }

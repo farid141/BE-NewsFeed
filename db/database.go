@@ -11,7 +11,7 @@ import (
 func NewDB(cfg config.Config) (*sql.DB, error) {
 	// create db connection
 	db_dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		cfg.DBUser,
 		cfg.DBPassword,
 		cfg.DBHost,

@@ -11,6 +11,7 @@ import (
 
 type UserService interface {
 	ListUsers(userID int, page, limit, offset int) (response.PaginatedResponse[dto.UserResponse], error)
+	FollowUser(follower_id, followed_id string, follow bool) error
 }
 
 type userService struct {
@@ -46,4 +47,13 @@ func (s *userService) ListUsers(userID int, page, limit, offset int) (response.P
 			HasMore: page*limit < total,
 		},
 	}, nil
+}
+
+func (s *userService) FollowUser(follower_id, followed_id string, follow bool) error {
+	err := s.repo.FollowUser(follower_id, followed_id, follow)
+	if err != nil {
+		return helper.NewServiceError(fiber.StatusInternalServerError, "Internal Server Error", nil)
+	}
+
+	return nil
 }

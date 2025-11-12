@@ -40,8 +40,8 @@ func (r *Router) Setup(app *fiber.App) {
 
 	api.Get("/me", r.authController.Me)
 
+	api.Post("/follow/:id", r.userController.FollowUser(true))
+	api.Delete("/follow/:id", r.userController.FollowUser(false))
 	// api.Post("/posts", controller.CreatePost(db))
-	// api.Post("/follow/:id", controller.FollowUser(db, true))
-	// api.Delete("/follow/:id", controller.FollowUser(db, false))
 	// api.Get("/feed", controller.GetFeed(db))
 }

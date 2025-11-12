@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/farid141/go-rest-api/dto"
@@ -15,6 +16,7 @@ type UserRepository interface {
 	CreateUser(dto.CreateUserRequest) (int, error)
 	GetUserByUsername(username string) (*model.User, error)
 	GetUserByID(id int) (*model.User, error)
+	FollowUser(follower_id, followed_id string, follow bool) error
 }
 
 type userRepository struct {
@@ -124,4 +126,40 @@ func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
 	}
 
 	return int(id), nil
+}
+
+func (r *userRepository) FollowUser(follower_id, followed_id string, follow bool) error {
+	var err error
+
+	var followed_str int
+	followed_str, err = strconv.Atoi(followed_id)
+	if err != nil {
+		return err
+	}
+
+	// validasi user yang diikuti ada
+	_, err = r.GetUserByID(followed_str)
+	if err != nil {
+		return err
+	}
+
+	// follow/unfollow
+	queryString := func() string {
+		if follow {
+			return `INSERT INTO follows (follower_id, followed_id) VALUES (?, ?)`
+		} else {
+			return `DELETE FROM follows WHERE follower_id=? AND followed_id=?`
+		}
+	}()
+
+	_, err = r.db.Exec(
+		queryString,
+		follower_id,
+		followed_id,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

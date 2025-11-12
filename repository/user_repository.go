@@ -2,12 +2,11 @@ package repository
 
 import (
 	"database/sql"
-
-	"github.com/farid141/go-rest-api/dto"
+	"time"
 )
 
 type UserRepository interface {
-	GetUsers(userID int, limit, offset int) ([]dto.UserResponse, int, error)
+	GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error)
 }
 
 type userRepository struct {
@@ -18,7 +17,15 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) GetUsers(userID int, limit, offset int) ([]dto.UserResponse, int, error) {
+type UserWithProfile struct {
+	ID        int64
+	Username  string
+	Password  string
+	CreatedAt time.Time
+	Following bool
+}
+
+func (r *userRepository) GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error) {
 	var total int
 	err := r.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
 	if err != nil {
@@ -42,9 +49,9 @@ func (r *userRepository) GetUsers(userID int, limit, offset int) ([]dto.UserResp
 	}
 	defer rows.Close()
 
-	users := []dto.UserResponse{}
+	users := []UserWithProfile{}
 	for rows.Next() {
-		var u dto.UserResponse
+		var u UserWithProfile
 		if err := rows.Scan(&u.ID, &u.Username, &u.Following, &u.CreatedAt); err != nil {
 			return nil, 0, err
 		}

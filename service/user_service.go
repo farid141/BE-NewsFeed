@@ -25,8 +25,18 @@ func (s *userService) ListUsers(userID int, page, limit, offset int) (response.P
 		return response.PaginatedResponse[dto.UserResponse]{}, err
 	}
 
+	userDTOs := make([]dto.UserResponse, len(users))
+	for i, u := range users {
+		userDTOs[i] = dto.UserResponse{
+			ID:        u.ID,
+			Username:  u.Username,
+			CreatedAt: u.CreatedAt.Format("2006-01-02 15:04:05"),
+			Following: u.Following,
+		}
+	}
+
 	return response.PaginatedResponse[dto.UserResponse]{
-		Data: users,
+		Data: userDTOs,
 		Pagination: response.Pagination{
 			Page:    page,
 			Limit:   limit,

@@ -9,10 +9,19 @@ import (
 type Router struct {
 	userController *controller.UserController
 	authController *controller.AuthController
+	postController *controller.PostController
 }
 
-func NewRouter(userController *controller.UserController, authController *controller.AuthController) *Router {
-	return &Router{userController: userController, authController: authController}
+func NewRouter(
+	userController *controller.UserController,
+	authController *controller.AuthController,
+	postController *controller.PostController,
+) *Router {
+	return &Router{
+		userController: userController,
+		authController: authController,
+		postController: postController,
+	}
 }
 
 func (r *Router) Setup(app *fiber.App) {
@@ -42,6 +51,6 @@ func (r *Router) Setup(app *fiber.App) {
 
 	api.Post("/follow/:id", r.userController.FollowUser(true))
 	api.Delete("/follow/:id", r.userController.FollowUser(false))
-	// api.Post("/posts", controller.CreatePost(db))
-	// api.Get("/feed", controller.GetFeed(db))
+	api.Post("/posts", r.postController.CreatePost)
+	api.Get("/feed", r.postController.GetFeed)
 }

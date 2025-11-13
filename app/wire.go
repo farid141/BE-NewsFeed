@@ -17,6 +17,7 @@ import (
 type AppContainer struct {
 	UserService service.UserService
 	AuthService service.AuthService
+	PostService service.PostService
 	Router      *router.Router
 }
 

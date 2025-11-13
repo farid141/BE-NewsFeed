@@ -73,6 +73,7 @@ func (ctl *AuthController) RefreshToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "no refresh token"})
 	}
 
+	// Input validation
 	token, err := jwt.Parse(refreshCookie, func(t *jwt.Token) (interface{}, error) {
 		return []byte("secret"), nil
 	})
@@ -80,15 +81,16 @@ func (ctl *AuthController) RefreshToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid refresh token"})
 	}
 
+	// Process
 	claims := token.Claims.(jwt.MapClaims)
 	username := claims["username"].(string)
 	userId := claims["id"].(string)
-
 	newAccessToken, err := utils.GenerateJWT(username, userId, 15*time.Minute)
 	if err != nil {
 		return err
 	}
 
+	// structuring response
 	c.Cookie(&fiber.Cookie{Name: "token", Value: newAccessToken})
 
 	return c.JSON(fiber.Map{"message": "token refreshed"})

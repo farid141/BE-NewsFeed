@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"strconv"
-
 	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/service"
 	"github.com/farid141/go-rest-api/utils"
@@ -18,20 +16,17 @@ func NewUserController(userService service.UserService) *UserController {
 }
 
 func (ctl *UserController) GetUsers(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page"))
-	limit, _ := strconv.Atoi(c.Query("limit"))
-	if limit == 0 {
-		limit = 10
-	}
-	if page == 0 {
-		page = 1
-	}
+	page, limit := helper.GetPageAndLimit(c)
 	offset := (page - 1) * limit
 
-	// claims := utils.GetJWTClaims(c)
-	// userID := int(claims["id"].(float64))
+	claims := utils.GetJWTClaims(c)
+	userID := claims["id"]
+	id, ok := userID.(int)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"error": "internal server error"})
+	}
 
-	users, err := ctl.userService.ListUsers(1, page, limit, offset)
+	users, err := ctl.userService.ListUsers(id, page, limit, offset)
 	if err != nil {
 		if se, ok := err.(*helper.ServiceError); ok {
 			return c.Status(se.StatusCode).JSON(fiber.Map{

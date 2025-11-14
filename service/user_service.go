@@ -7,6 +7,7 @@ import (
 	"github.com/farid141/go-rest-api/repository"
 	"github.com/farid141/go-rest-api/response"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type UserService interface {
@@ -15,11 +16,12 @@ type UserService interface {
 }
 
 type userService struct {
-	repo repository.UserRepository
+	repo   repository.UserRepository
+	logger *logrus.Logger
 }
 
-func NewUserService(repo repository.UserRepository) UserService {
-	return &userService{repo}
+func NewUserService(repo repository.UserRepository, logger *logrus.Logger) UserService {
+	return &userService{repo, logger}
 }
 
 func (s *userService) ListUsers(userID int, page, limit, offset int) (response.PaginatedResponse[dto.UserResponse], error) {

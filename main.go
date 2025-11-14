@@ -1,12 +1,9 @@
 package main
 
 import (
-	"os"
-
 	"github.com/farid141/go-rest-api/app"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -27,9 +24,6 @@ func main() {
 	})
 
 	appContainer.Router.Setup(app)
-
-	file, _ := os.OpenFile("application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	log.SetOutput(file)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:3000",

@@ -4,6 +4,7 @@ import (
 	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/repository"
 	"github.com/farid141/go-rest-api/response"
+	"github.com/sirupsen/logrus"
 )
 
 type PostService interface {
@@ -12,16 +13,18 @@ type PostService interface {
 }
 
 type postService struct {
-	repo repository.PostRepository
+	repo   repository.PostRepository
+	logger *logrus.Logger
 }
 
-func NewPostService(repo repository.PostRepository) PostService {
-	return &postService{repo}
+func NewPostService(repo repository.PostRepository, logger *logrus.Logger) PostService {
+	return &postService{repo, logger}
 }
 
 func (p *postService) CreatePost(userID string, req dto.CreatePostRequest) (*dto.PostResponse, error) {
 	post, err := p.repo.CreatePost(userID, req)
 	if err != nil {
+		p.logger.Error("error create post")
 		return nil, err
 	}
 	return &dto.PostResponse{

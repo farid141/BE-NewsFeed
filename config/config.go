@@ -8,6 +8,7 @@ type Config struct {
 	DBName     string
 	DBUser     string
 	DBPassword string
+	LOG_FILE   string
 }
 
 func LoadConfig() (Config, error) {
@@ -24,6 +25,7 @@ func LoadConfig() (Config, error) {
 		DBUser:     viper.GetString("DB_USER"),
 		DBName:     viper.GetString("DB_NAME"),
 		DBPassword: viper.GetString("DB_PASSWORD"),
+		LOG_FILE:   viper.GetString("LOG_FILE"),
 	}
 
 	return cfg, nil

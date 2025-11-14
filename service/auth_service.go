@@ -10,6 +10,7 @@ import (
 	"github.com/farid141/go-rest-api/repository"
 	"github.com/farid141/go-rest-api/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,11 +20,12 @@ type AuthService interface {
 }
 
 type authService struct {
-	repo repository.UserRepository
+	repo   repository.UserRepository
+	logger *logrus.Logger
 }
 
-func NewAuthService(repo repository.UserRepository) AuthService {
-	return &authService{repo}
+func NewAuthService(repo repository.UserRepository, logger *logrus.Logger) AuthService {
+	return &authService{repo, logger}
 }
 
 type TokenResponse struct {
@@ -34,6 +36,8 @@ type TokenResponse struct {
 
 func (a *authService) Login(username, password string) (*TokenResponse, error) {
 	var err error
+
+	a.logger.Info(username + " try to login")
 
 	var user *model.User
 	user, err = a.repo.GetUserByUsername(username)

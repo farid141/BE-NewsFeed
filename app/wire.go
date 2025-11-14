@@ -7,6 +7,7 @@ import (
 	"github.com/farid141/go-rest-api/config"
 	"github.com/farid141/go-rest-api/controller"
 	"github.com/farid141/go-rest-api/router"
+	"github.com/sirupsen/logrus"
 
 	"github.com/farid141/go-rest-api/db"
 	"github.com/farid141/go-rest-api/repository"
@@ -19,6 +20,7 @@ type AppContainer struct {
 	AuthService service.AuthService
 	PostService service.PostService
 	Router      *router.Router
+	Logger      *logrus.Logger
 }
 
 func InitializeApp() (*AppContainer, error) {

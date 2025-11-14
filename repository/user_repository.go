@@ -9,6 +9,7 @@ import (
 	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/model"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository interface {
@@ -109,11 +110,16 @@ func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
 		return 0, helper.NewServiceError(fiber.StatusConflict, "Username already exists", nil)
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return 0, err
+	}
+
 	// insert new user
 	res, err := r.db.Exec(
 		`INSERT INTO users (username, password_hash, created_at) VALUES (?,?,NOW())`,
 		req.Username,
-		req.Password,
+		hashedPassword,
 	)
 	if err != nil {
 		return 0, err

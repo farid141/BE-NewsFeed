@@ -14,7 +14,7 @@ Autentikasi menggunakan JWT `(token dan refresh_token)` disimpan pada `HTTP-Cook
     Pastikan telah mengunduh golang migrate di OS <github.com/golang-migrate/migrate>
 
     ```bash
-    migrate -database DB URL: "mysql://[DB_USER]:[DB_PASSWORD]@tcp([DB_HOST]:[DB_PORT])/[DB_NAME]" -path db/migrations up
+    migrate -database "mysql://root:@tcp(localhost:3306)/gofiber_restapi" -path db/migrations up
     ```
 
 2. Instal modul `go mod` projek

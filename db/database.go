@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func NewDB(cfg config.Config) (*sql.DB, error) {
+func NewDB(cfg *config.Config) (*sql.DB, error) {
 	// create db connection
 	db_dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true",

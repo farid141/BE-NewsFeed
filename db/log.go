@@ -7,11 +7,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewLog(cfg config.Config) *logrus.Logger {
+func NewLog(cfg *config.Config) *logrus.Logger {
 	logger := logrus.New()
 
 	file, _ := os.OpenFile(cfg.LOG_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	logger.SetOutput(file)
+	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	return logger
 }

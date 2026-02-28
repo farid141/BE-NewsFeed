@@ -26,7 +26,7 @@ func main() {
 	appContainer.Router.Setup(app)
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
+		AllowOrigins:     appContainer.Config.ORIGINS,
 		AllowHeaders:     "Origin, Content-Type, Accept",
 		AllowCredentials: true,
 	}))

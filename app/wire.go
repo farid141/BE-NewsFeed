@@ -21,6 +21,7 @@ type AppContainer struct {
 	PostService service.PostService
 	Router      *router.Router
 	Logger      *logrus.Logger
+	Config      *config.Config
 }
 
 func InitializeApp() (*AppContainer, error) {

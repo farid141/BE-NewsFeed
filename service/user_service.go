@@ -28,7 +28,7 @@ func NewUserService(repo repository.UserRepository, db *sql.DB, logger *logrus.L
 }
 
 func (s *userService) ListUsers(userID int, page, limit, offset int) (response.PaginatedResponse[dto.UserResponse], error) {
-	users, total, err := s.repo.GetUsers(userID, limit, offset)
+	users, total, err := s.repo.GetUsers(userID, limit, offset, s.db)
 	if err != nil {
 		return response.PaginatedResponse[dto.UserResponse]{}, helper.NewServiceError(fiber.StatusInternalServerError, "Internal Server Error", nil)
 	}

@@ -42,7 +42,7 @@ func (a *authService) Login(username, password string) (*TokenResponse, error) {
 	a.logger.Info(username + " try to login")
 
 	var user *model.User
-	user, err = a.repo.GetUserByUsername(username)
+	user, err = a.repo.GetUserByUsername(username, a.db)
 	if err != nil {
 		return nil, helper.NewServiceError(fiber.StatusUnauthorized, "Invalid Credentials", nil)
 	}
@@ -69,14 +69,14 @@ func (a *authService) Register(req dto.CreateUserRequest) (*dto.CreateUserRespon
 	var err error
 
 	// username unique validation
-	_, err = a.repo.GetUserByUsername(req.Username)
+	_, err = a.repo.GetUserByUsername(req.Username, a.db)
 	if err == nil {
 		return nil, helper.NewServiceError(fiber.StatusConflict, "Username already exists", nil)
 	}
 
 	// insert and get id
 	var id int
-	id, err = a.repo.CreateUser(req)
+	id, err = a.repo.CreateUser(req, a.db)
 	if err != nil {
 		return nil, err
 	}

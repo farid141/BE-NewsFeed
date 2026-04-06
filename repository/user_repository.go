@@ -12,15 +12,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type DBTX interface {
-	QueryRow(query string, args ...any) *sql.Row
-	Exec(query string, args ...any) (sql.Result, error)
-}
-
 type UserRepository interface {
-	GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error)
-	CreateUser(dto.CreateUserRequest) (int, error)
-	GetUserByUsername(username string) (*model.User, error)
+	GetUsers(userID int, limit, offset int, q DBTX) ([]UserWithProfile, int, error)
+	CreateUser(req dto.CreateUserRequest, q DBTX) (int, error)
+	GetUserByUsername(username string, q DBTX) (*model.User, error)
 	GetUserByID(id int, q DBTX) (*model.User, error)
 	FollowUser(follower_id, followed_id string, follow bool, q DBTX) error
 }
@@ -41,14 +36,14 @@ type UserWithProfile struct {
 	Following bool
 }
 
-func (r *userRepository) GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error) {
+func (r *userRepository) GetUsers(userID int, limit, offset int, q DBTX) ([]UserWithProfile, int, error) {
 	var total int
-	err := r.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
+	err := q.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := r.db.Query(`
+	rows, err := q.Query(`
 		SELECT 
 			u.id,
 			u.username,
@@ -77,9 +72,9 @@ func (r *userRepository) GetUsers(userID int, limit, offset int) ([]UserWithProf
 	return users, total, nil
 }
 
-func (r *userRepository) GetUserByUsername(username string) (*model.User, error) {
+func (r *userRepository) GetUserByUsername(username string, q DBTX) (*model.User, error) {
 	var user model.User
-	err := r.db.QueryRow(
+	err := q.QueryRow(
 		`SELECT id, username, password_hash, created_at 
 		FROM users WHERE username=?`,
 		username,
@@ -106,9 +101,9 @@ func (r *userRepository) GetUserByID(id int, q DBTX) (*model.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
+func (r *userRepository) CreateUser(req dto.CreateUserRequest, q DBTX) (int, error) {
 	// username validation
-	exists, err := helper.CoulmnValueExists(r.db, "users", "username", req.Username)
+	exists, err := helper.CoulmnValueExists(q, "users", "username", req.Username)
 	if err != nil {
 		return 0, err
 	}
@@ -122,7 +117,7 @@ func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
 	}
 
 	// insert new user
-	res, err := r.db.Exec(
+	res, err := q.Exec(
 		`INSERT INTO users (username, password_hash, created_at) VALUES (?,?,NOW())`,
 		req.Username,
 		hashedPassword,

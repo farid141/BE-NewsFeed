@@ -2,6 +2,8 @@
 package service
 
 import (
+	"database/sql"
+
 	"github.com/farid141/go-rest-api/dto"
 	"github.com/farid141/go-rest-api/helper"
 	"github.com/farid141/go-rest-api/repository"
@@ -17,11 +19,12 @@ type UserService interface {
 
 type userService struct {
 	repo   repository.UserRepository
+	db     *sql.DB
 	logger *logrus.Logger
 }
 
-func NewUserService(repo repository.UserRepository, logger *logrus.Logger) UserService {
-	return &userService{repo, logger}
+func NewUserService(repo repository.UserRepository, db *sql.DB, logger *logrus.Logger) UserService {
+	return &userService{repo, db, logger}
 }
 
 func (s *userService) ListUsers(userID int, page, limit, offset int) (response.PaginatedResponse[dto.UserResponse], error) {
@@ -52,10 +55,7 @@ func (s *userService) ListUsers(userID int, page, limit, offset int) (response.P
 }
 
 func (s *userService) FollowUser(follower_id, followed_id string, follow bool) error {
-	err := s.repo.FollowUser(follower_id, followed_id, follow)
-	if err != nil {
-		return helper.NewServiceError(fiber.StatusInternalServerError, "Internal Server Error", nil)
-	}
-
-	return nil
+	return helper.WithTx(s.db, func(tx *sql.Tx) error {
+		return s.repo.FollowUser(follower_id, followed_id, follow, tx)
+	}, s.logger)
 }

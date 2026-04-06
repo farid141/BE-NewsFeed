@@ -12,12 +12,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type DBTX interface {
+	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
 type UserRepository interface {
 	GetUsers(userID int, limit, offset int) ([]UserWithProfile, int, error)
 	CreateUser(dto.CreateUserRequest) (int, error)
 	GetUserByUsername(username string) (*model.User, error)
-	GetUserByID(id int) (*model.User, error)
-	FollowUser(follower_id, followed_id string, follow bool) error
+	GetUserByID(id int, q DBTX) (*model.User, error)
+	FollowUser(follower_id, followed_id string, follow bool, q DBTX) error
 }
 
 type userRepository struct {
@@ -86,13 +91,14 @@ func (r *userRepository) GetUserByUsername(username string) (*model.User, error)
 	return &user, nil
 }
 
-func (r *userRepository) GetUserByID(id int) (*model.User, error) {
+func (r *userRepository) GetUserByID(id int, q DBTX) (*model.User, error) {
 	var user model.User
-	err := r.db.QueryRow(
+	row := q.QueryRow(
 		`SELECT id, username, password_hash, created_at 
 		FROM users WHERE id=?`,
 		id,
-	).Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt)
+	)
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +140,7 @@ func (r *userRepository) CreateUser(req dto.CreateUserRequest) (int, error) {
 	return int(id), nil
 }
 
-func (r *userRepository) FollowUser(follower_id, followed_id string, follow bool) error {
+func (r *userRepository) FollowUser(follower_id, followed_id string, follow bool, q DBTX) error {
 	var err error
 
 	var followed_str int
@@ -144,7 +150,7 @@ func (r *userRepository) FollowUser(follower_id, followed_id string, follow bool
 	}
 
 	// validasi user yang diikuti ada
-	_, err = r.GetUserByID(followed_str)
+	_, err = r.GetUserByID(followed_str, q)
 	if err != nil {
 		return err
 	}
@@ -158,7 +164,7 @@ func (r *userRepository) FollowUser(follower_id, followed_id string, follow bool
 		}
 	}()
 
-	_, err = r.db.Exec(
+	_, err = q.Exec(
 		queryString,
 		follower_id,
 		followed_id,

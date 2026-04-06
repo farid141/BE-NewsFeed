@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"strconv"
 	"time"
 
@@ -21,11 +22,12 @@ type AuthService interface {
 
 type authService struct {
 	repo   repository.UserRepository
+	db     *sql.DB
 	logger *logrus.Logger
 }
 
-func NewAuthService(repo repository.UserRepository, logger *logrus.Logger) AuthService {
-	return &authService{repo, logger}
+func NewAuthService(repo repository.UserRepository, db *sql.DB, logger *logrus.Logger) AuthService {
+	return &authService{repo, db, logger}
 }
 
 type TokenResponse struct {
@@ -81,7 +83,7 @@ func (a *authService) Register(req dto.CreateUserRequest) (*dto.CreateUserRespon
 
 	// query by id
 	var user *model.User
-	user, err = a.repo.GetUserByID(id)
+	user, err = a.repo.GetUserByID(id, a.db)
 	if err != nil {
 		return nil, err
 	}
